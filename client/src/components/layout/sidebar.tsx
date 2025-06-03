@@ -87,8 +87,8 @@ export default function Sidebar() {
           const isActive = location === item.href;
           return (
             <Link key={item.name} href={item.href}>
-              <a
-                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors ${
+              <div
+                className={`w-full flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors cursor-pointer ${
                   isActive
                     ? "bg-blue-50 text-blue-700 border border-blue-200"
                     : "text-gray-700 hover:bg-gray-100"
@@ -105,7 +105,7 @@ export default function Sidebar() {
                     {item.badge}
                   </Badge>
                 )}
-              </a>
+              </div>
             </Link>
           );
         })}

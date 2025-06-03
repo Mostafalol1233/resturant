@@ -26,6 +26,8 @@ export default function RecentOrders() {
     queryKey: ["/api/dashboard/recent-orders"],
   });
 
+  const ordersList = Array.isArray(orders) ? orders : [];
+
   if (isLoading) {
     return (
       <Card>
@@ -69,9 +71,9 @@ export default function RecentOrders() {
         </div>
       </CardHeader>
       <CardContent>
-        {orders && orders.length > 0 ? (
+        {ordersList.length > 0 ? (
           <div className="space-y-4">
-            {orders.slice(0, 5).map((order: any) => {
+            {ordersList.slice(0, 5).map((order: any) => {
               const StatusIcon = statusIcons[order.status as keyof typeof statusIcons];
               return (
                 <div key={order.id} className="flex items-center justify-between py-3 border-b border-gray-100 last:border-b-0">
@@ -118,7 +120,10 @@ export default function RecentOrders() {
                   <div className="text-right">
                     <p className="font-medium text-gray-900">${order.total}</p>
                     <Badge className={statusColors[order.status as keyof typeof statusColors]}>
-                      <StatusIcon className="w-3 h-3 mr-1" />
+                      {(() => {
+                        const Icon = statusIcons[order.status as keyof typeof statusIcons] || Clock;
+                        return <Icon className="w-3 h-3 mr-1" />;
+                      })()}
                       {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
                     </Badge>
                   </div>
