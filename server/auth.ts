@@ -1,6 +1,14 @@
 import session from "express-session";
-import type { Express, RequestHandler } from "express";
+import type { Express, RequestHandler, Request } from "express";
 import { storage } from "./storage";
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: any;
+    }
+  }
+}
 
 export function setupAuth(app: Express) {
   app.set("trust proxy", 1);
@@ -90,7 +98,7 @@ export function setupAuth(app: Express) {
   });
 }
 
-export const isAuthenticated: RequestHandler = async (req, res, next) => {
+export const isAuthenticated: RequestHandler = async (req: any, res, next) => {
   const session = req.session as any;
   
   if (!session || !session.userId || !session.user) {

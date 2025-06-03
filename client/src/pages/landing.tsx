@@ -15,10 +15,15 @@ export default function Landing() {
 
   const loginMutation = useMutation({
     mutationFn: async (credentials: { email: string; password: string }) => {
-      return await apiRequest("/api/login", {
+      const response = await fetch("/api/login", {
         method: "POST",
-        body: credentials,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(credentials),
       });
+      if (!response.ok) {
+        throw new Error("Login failed");
+      }
+      return response.json();
     },
     onSuccess: () => {
       window.location.reload();
@@ -34,9 +39,14 @@ export default function Landing() {
 
   const autoLoginMutation = useMutation({
     mutationFn: async () => {
-      return await apiRequest("/api/auto-login", {
+      const response = await fetch("/api/auto-login", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
       });
+      if (!response.ok) {
+        throw new Error("Auto-login failed");
+      }
+      return response.json();
     },
     onSuccess: () => {
       window.location.reload();
@@ -82,9 +92,39 @@ export default function Landing() {
                 <p className="text-sm text-gray-500">Professional Management System</p>
               </div>
             </div>
-            <Button onClick={handleLogin} size="lg" className="bg-blue-600 hover:bg-blue-700">
-              Sign In
-            </Button>
+            <div className="flex items-center space-x-4">
+              <form onSubmit={handleLogin} className="flex items-center space-x-2">
+                <Input
+                  type="email"
+                  placeholder="Email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-48"
+                />
+                <Input
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-32"
+                />
+                <Button 
+                  type="submit" 
+                  disabled={loginMutation.isPending}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loginMutation.isPending ? "..." : "Sign In"}
+                </Button>
+              </form>
+              <div className="text-gray-300">|</div>
+              <Button 
+                onClick={handleAutoLogin}
+                variant="outline"
+                disabled={autoLoginMutation.isPending}
+              >
+                {autoLoginMutation.isPending ? "..." : "Demo"}
+              </Button>
+            </div>
           </div>
         </div>
       </header>

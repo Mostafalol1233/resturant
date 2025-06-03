@@ -308,7 +308,7 @@ export default function SettingsPage() {
                         <span className="font-medium text-green-800">Authentication Enabled</span>
                       </div>
                       <p className="text-sm text-green-700 mt-1">
-                        Your account is secured with Replit authentication
+                        Your account is secured with local authentication
                       </p>
                     </div>
 
