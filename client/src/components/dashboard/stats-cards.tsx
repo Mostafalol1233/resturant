@@ -2,8 +2,15 @@ import { useQuery } from "@tanstack/react-query";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { DollarSign, ShoppingCart, AlertTriangle, Users, TrendingUp } from "lucide-react";
 
+interface DashboardStats {
+  totalRevenue: string;
+  totalOrders: number;
+  averageOrderValue: string;
+  lowStockCount?: number;
+}
+
 export default function StatsCards() {
-  const { data: stats, isLoading } = useQuery({
+  const { data: stats, isLoading } = useQuery<DashboardStats>({
     queryKey: ["/api/dashboard/stats"],
   });
 
@@ -28,7 +35,7 @@ export default function StatsCards() {
   const cards = [
     {
       title: "Today's Revenue",
-      value: `$${stats?.totalRevenue?.toFixed(2) || "0.00"}`,
+      value: `$${parseFloat(stats?.totalRevenue || "0").toFixed(2)}`,
       change: "+12% from yesterday",
       icon: DollarSign,
       bgColor: "bg-green-100",
