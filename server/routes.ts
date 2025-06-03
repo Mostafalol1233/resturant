@@ -269,17 +269,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Backup endpoints
   app.post("/api/backup/create", isAuthenticated, async (req, res) => {
     try {
-      //const user = await authenticateUser(req);
-      //if (!user) {
-      //  return res.status(401).json({ message: "Unauthorized" });
-      //}
+      // Create backup data directly
+      const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+      const backupFileName = `backup-${timestamp}.json`;
 
-      const backupFileName = await backupService.createBackup();
-      res.json({ 
-        success: true, 
-        message: "تم إنشاء الباك أب بنجاح",
-        fileName: backupFileName 
-      });
+      const backupData = {
+        timestamp: new Date().toISOString(),
+        version: "1.0",
+        data: {
+          restaurant: await storage.getRestaurant(),
+          categories: await storage.getCategories(),
+          products: await storage.getProducts(),
+          orders: await storage.getOrders(1000),
+          inventoryTransactions: await storage.getInventoryTransactions(),
+          notifications: await storage.getNotifications()
+        }
+      };
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${backupFileName}"`);
+      res.send(JSON.stringify(backupData, null, 2));
     } catch (error: any) {
       res.status(500).json({ 
         success: false, 
@@ -290,13 +299,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/backup/list", isAuthenticated, async (req, res) => {
     try {
-      //const user = await authenticateUser(req);
-      //if (!user) {
-      //  return res.status(401).json({ message: "Unauthorized" });
-      //}
-
-      const backups = await backupService.listBackups();
-      res.json({ success: true, backups });
+      // Return empty list since Object Storage is not configured
+      res.json({ 
+        success: true, 
+        backups: [],
+        message: "Object Storage not configured - use Create Backup to download backup file directly"
+      });
     } catch (error: any) {
       res.status(500).json({ 
         success: false, 
@@ -307,16 +315,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.post("/api/backup/restore/:fileName", isAuthenticated, async (req, res) => {
     try {
-      //const user = await authenticateUser(req);
-      //if (!user) {
-      //  return res.status(401).json({ message: "Unauthorized" });
-      //}
-
-      const { fileName } = req.params;
-      await backupService.restoreBackup(fileName);
-      res.json({ 
-        success: true, 
-        message: "تم استعادة الباك أب بنجاح" 
+      res.status(501).json({ 
+        success: false, 
+        message: "Restore functionality requires Object Storage configuration. Please contact support." 
       });
     } catch (error: any) {
       res.status(500).json({ 
@@ -328,17 +329,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.get("/api/backup/download/:fileName", isAuthenticated, async (req, res) => {
     try {
-      //const user = await authenticateUser(req);
-      //if (!user) {
-      //  return res.status(401).json({ message: "Unauthorized" });
-      //}
-
-      const { fileName } = req.params;
-      const backupContent = await backupService.downloadBackup(fileName);
-
-      res.setHeader('Content-Type', 'application/json');
-      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-      res.send(backupContent);
+      res.status(501).json({ 
+        success: false, 
+        message: "Download functionality requires Object Storage configuration. Use Create Backup instead." 
+      });
     } catch (error: any) {
       res.status(500).json({ 
         success: false, 
@@ -349,16 +343,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   app.delete("/api/backup/delete/:fileName", isAuthenticated, async (req, res) => {
     try {
-      //const user = await authenticateUser(req);
-      //if (!user) {
-      //  return res.status(401).json({ message: "Unauthorized" });
-      //}
-
-      const { fileName } = req.params;
-      await backupService.deleteBackup(fileName);
-      res.json({ 
-        success: true, 
-        message: "تم حذف الباك أب بنجاح" 
+      res.status(501).json({ 
+        success: false, 
+        message: "Delete functionality requires Object Storage configuration. Please contact support." 
       });
     } catch (error: any) {
       res.status(500).json({ 
