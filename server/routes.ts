@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { setupAuth, isAuthenticated } from "./auth";
 import { insertProductSchema, insertCategorySchema, insertOrderSchema, insertOrderItemSchema } from "@shared/schema";
 import { z } from "zod";
+import { backupService } from "./backup";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Auth middleware
@@ -17,7 +18,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const stats = await storage.getDailyStats();
       const lowStockProducts = await storage.getLowStockProducts();
       const notifications = await storage.getNotifications();
-      
+
       res.json({
         ...stats,
         lowStockCount: lowStockProducts.length,
@@ -197,15 +198,15 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post('/api/orders', isAuthenticated, async (req: any, res) => {
     try {
       const { order, items } = req.body;
-      
+
       const orderData = insertOrderSchema.parse({
         ...order,
         createdBy: req.user.claims.sub,
         orderNumber: `ORD-${Date.now()}`,
       });
-      
+
       const orderItemsData = items.map((item: any) => insertOrderItemSchema.parse(item));
-      
+
       const newOrder = await storage.createOrder(orderData, orderItemsData);
       res.status(201).json(newOrder);
     } catch (error) {
@@ -264,6 +265,109 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to mark notification as read" });
     }
   });
+
+  // Backup endpoints
+  app.post("/api/backup/create", isAuthenticated, async (req, res) => {
+    try {
+      //const user = await authenticateUser(req);
+      //if (!user) {
+      //  return res.status(401).json({ message: "Unauthorized" });
+      //}
+
+      const backupFileName = await backupService.createBackup();
+      res.json({ 
+        success: true, 
+        message: "تم إنشاء الباك أب بنجاح",
+        fileName: backupFileName 
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "خطأ في إنشاء الباك أب" 
+      });
+    }
+  });
+
+  app.get("/api/backup/list", isAuthenticated, async (req, res) => {
+    try {
+      //const user = await authenticateUser(req);
+      //if (!user) {
+      //  return res.status(401).json({ message: "Unauthorized" });
+      //}
+
+      const backups = await backupService.listBackups();
+      res.json({ success: true, backups });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "خطأ في جلب قائمة الباك أب" 
+      });
+    }
+  });
+
+  app.post("/api/backup/restore/:fileName", isAuthenticated, async (req, res) => {
+    try {
+      //const user = await authenticateUser(req);
+      //if (!user) {
+      //  return res.status(401).json({ message: "Unauthorized" });
+      //}
+
+      const { fileName } = req.params;
+      await backupService.restoreBackup(fileName);
+      res.json({ 
+        success: true, 
+        message: "تم استعادة الباك أب بنجاح" 
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "خطأ في استعادة الباك أب" 
+      });
+    }
+  });
+
+  app.get("/api/backup/download/:fileName", isAuthenticated, async (req, res) => {
+    try {
+      //const user = await authenticateUser(req);
+      //if (!user) {
+      //  return res.status(401).json({ message: "Unauthorized" });
+      //}
+
+      const { fileName } = req.params;
+      const backupContent = await backupService.downloadBackup(fileName);
+
+      res.setHeader('Content-Type', 'application/json');
+      res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+      res.send(backupContent);
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "خطأ في تحميل الباك أب" 
+      });
+    }
+  });
+
+  app.delete("/api/backup/delete/:fileName", isAuthenticated, async (req, res) => {
+    try {
+      //const user = await authenticateUser(req);
+      //if (!user) {
+      //  return res.status(401).json({ message: "Unauthorized" });
+      //}
+
+      const { fileName } = req.params;
+      await backupService.deleteBackup(fileName);
+      res.json({ 
+        success: true, 
+        message: "تم حذف الباك أب بنجاح" 
+      });
+    } catch (error: any) {
+      res.status(500).json({ 
+        success: false, 
+        message: error.message || "خطأ في حذف الباك أب" 
+      });
+    }
+  });
+
 
   const httpServer = createServer(app);
   return httpServer;

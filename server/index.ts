@@ -1,6 +1,7 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, serveStatic } from "./vite";
+import { backupService } from "./backup";
 
 const app = express();
 app.use(express.json());
@@ -66,5 +67,9 @@ app.use((req, res, next) => {
     reusePort: true,
   }, () => {
     log(`serving on port ${port}`);
+
+    // بدء خدمة الباك أب التلقائي
+    backupService.scheduleAutoBackup();
+    console.log('[backup] تم تفعيل نظام الباك أب التلقائي');
   });
 })();

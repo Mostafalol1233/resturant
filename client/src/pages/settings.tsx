@@ -96,18 +96,129 @@ export default function SettingsPage() {
     updateRestaurantMutation.mutate(data);
   };
 
-  const handleBackup = () => {
-    toast({
-      title: "Backup Started",
-      description: "Your data backup is being generated...",
-    });
+  const [backups, setBackups] = useState<string[]>([]);
+  const [isCreatingBackup, setIsCreatingBackup] = useState(false);
+  const [isRestoringBackup, setIsRestoringBackup] = useState(false);
+
+  // جلب قائمة الباك أب
+  const fetchBackups = async () => {
+    try {
+      const response = await fetch('/api/backup/list', { credentials: 'include' });
+      const data = await response.json();
+      if (data.success) {
+        setBackups(data.backups);
+      }
+    } catch (error) {
+      console.error('خطأ في جلب قائمة الباك أب:', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchBackups();
+  }, []);
+
+  const handleBackup = async () => {
+    setIsCreatingBackup(true);
+    try {
+      const response = await fetch('/api/backup/create', {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        alert('تم إنشاء الباك أب بنجاح!');
+        fetchBackups(); // إعادة تحميل القائمة
+      } else {
+        alert('خطأ في إنشاء الباك أب: ' + data.message);
+      }
+    } catch (error) {
+      alert('خطأ في إنشاء الباك أب');
+      console.error(error);
+    } finally {
+      setIsCreatingBackup(false);
+    }
+  };
+
+  const handleRestore = async (fileName: string) => {
+    if (!confirm(`هل أنت متأكد من استعادة الباك أب: ${fileName}؟\nسيتم استبدال البيانات الحالية.`)) {
+      return;
+    }
+
+    setIsRestoringBackup(true);
+    try {
+      const response = await fetch(`/api/backup/restore/${fileName}`, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        alert('تم استعادة الباك أب بنجاح!');
+        window.location.reload(); // إعادة تحميل الصفحة
+      } else {
+        alert('خطأ في استعادة الباك أب: ' + data.message);
+      }
+    } catch (error) {
+      alert('خطأ في استعادة الباك أب');
+      console.error(error);
+    } finally {
+      setIsRestoringBackup(false);
+    }
+  };
+
+  const handleDownload = async (fileName: string) => {
+    try {
+      const response = await fetch(`/api/backup/download/${fileName}`, {
+        credentials: 'include'
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.style.display = 'none';
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert('خطأ في تحميل الباك أب');
+      }
+    } catch (error) {
+      alert('خطأ في تحميل الباك أب');
+      console.error(error);
+    }
+  };
+
+  const handleDelete = async (fileName: string) => {
+    if (!confirm(`هل أنت متأكد من حذف الباك أب: ${fileName}؟`)) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`/api/backup/delete/${fileName}`, {
+        method: 'DELETE',
+        credentials: 'include'
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        alert('تم حذف الباك أب بنجاح!');
+        fetchBackups(); // إعادة تحميل القائمة
+      } else {
+        alert('خطأ في حذف الباك أب: ' + data.message);
+      }
+    } catch (error) {
+      alert('خطأ في حذف الباك أب');
+      console.error(error);
+    }
   };
 
   const handleImport = () => {
-    toast({
-      title: "Import",
-      description: "Data import functionality will be available soon",
-    });
+    // Import functionality would be implemented here
+    console.log("Import initiated");
   };
 
   if (isLoading || !isAuthenticated) {
@@ -357,10 +468,52 @@ export default function SettingsPage() {
                       <p className="text-sm text-gray-500 mb-4">
                         Create a complete backup of all your restaurant data including orders, products, and settings.
                       </p>
-                      <Button onClick={handleBackup} className="bg-blue-600 hover:bg-blue-700">
+                      <Button onClick={handleBackup} className="bg-blue-600 hover:bg-blue-700" disabled={isCreatingBackup}>
                         <Download className="w-4 h-4 mr-2" />
-                        Create Backup
+                        {isCreatingBackup ? 'Creating Backup...' : 'Create Backup'}
                       </Button>
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Restore Data</h4>
+                      <p className="text-sm text-gray-500 mb-4">
+                        Restore your data from a previous backup.
+                      </p>
+                      {backups.length > 0 ? (
+                        <div className="space-y-2">
+                          {backups.map((backup, index) => (
+                            <div key={index} className="flex items-center justify-between">
+                              <span>{backup}</span>
+                              <div>
+                                <Button
+                                  onClick={() => handleRestore(backup)}
+                                  variant="secondary"
+                                  size="sm"
+                                  disabled={isRestoringBackup}
+                                >
+                                  {isRestoringBackup ? 'Restoring...' : 'Restore'}
+                                </Button>
+                                <Button
+                                  onClick={() => handleDownload(backup)}
+                                  variant="outline"
+                                  size="sm"
+                                >
+                                  Download
+                                </Button>
+                                <Button
+                                  onClick={() => handleDelete(backup)}
+                                  variant="destructive"
+                                  size="sm"
+                                >
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="text-sm text-gray-500">No backups available.</p>
+                      )}
                     </div>
 
                     <div className="border-t pt-4">
