@@ -1,10 +1,70 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { ShoppingCart, Users, BarChart3, Shield, Zap, Globe } from "lucide-react";
+import { useState } from "react";
+import { useMutation } from "@tanstack/react-query";
+import { apiRequest } from "@/lib/queryClient";
+import { useToast } from "@/hooks/use-toast";
 
 export default function Landing() {
-  const handleLogin = () => {
-    window.location.href = "/api/login";
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const { toast } = useToast();
+
+  const loginMutation = useMutation({
+    mutationFn: async (credentials: { email: string; password: string }) => {
+      return await apiRequest("/api/login", {
+        method: "POST",
+        body: credentials,
+      });
+    },
+    onSuccess: () => {
+      window.location.reload();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Login Failed",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const autoLoginMutation = useMutation({
+    mutationFn: async () => {
+      return await apiRequest("/api/auto-login", {
+        method: "POST",
+      });
+    },
+    onSuccess: () => {
+      window.location.reload();
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Auto-login Failed",
+        description: error.message || "Please try again",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both email and password",
+        variant: "destructive",
+      });
+      return;
+    }
+    loginMutation.mutate({ email, password });
+  };
+
+  const handleAutoLogin = () => {
+    autoLoginMutation.mutate();
   };
 
   return (
