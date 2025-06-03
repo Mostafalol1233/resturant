@@ -1,10 +1,18 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist/client",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist/client"
+      }
+    }
+  ],
   "functions": {
     "server/index.ts": {
-      "runtime": "@vercel/node"
+      "runtime": "@vercel/node",
+      "maxDuration": 30
     }
   },
   "routes": [
@@ -22,5 +30,7 @@
   ],
   "env": {
     "NODE_ENV": "production"
-  }
+  },
+  "installCommand": "npm install",
+  "buildCommand": "npm run build"
 }
