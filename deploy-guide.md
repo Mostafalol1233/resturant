@@ -54,6 +54,7 @@ Your app is now ready for deployment. The authentication system works properly a
 - Verify all imports are correct
 
 ### Vercel Deployment
-- The vercel.json now uses functions property only (no conflicts)
-- Both API routes and static files are handled by the same function
+- The vercel.json now uses builds/routes configuration (no conflicts)
+- Single Express server handles all routes including frontend
 - Build output goes to dist/index.js
+- Clean configuration without conflicting properties
