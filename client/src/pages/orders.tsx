@@ -55,6 +55,8 @@ export default function Orders() {
     enabled: isAuthenticated,
   });
 
+  const ordersList = Array.isArray(orders) ? orders : [];
+
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ id, status }: { id: number; status: string }) => {
       await apiRequest("PUT", `/api/orders/${id}/status`, { status });
@@ -104,7 +106,7 @@ export default function Orders() {
             <div className="flex items-center space-x-4">
               <h3 className="text-lg font-semibold text-gray-900">Order Management</h3>
               <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                {orders?.length || 0} Orders
+                {ordersList.length} Orders
               </Badge>
             </div>
             <Button
@@ -122,7 +124,7 @@ export default function Orders() {
             </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-              {orders?.map((order: any) => {
+              {ordersList.map((order: any) => {
                 const StatusIcon = statusIcons[order.status as keyof typeof statusIcons];
                 return (
                   <Card key={order.id} className="hover:shadow-md transition-shadow">
@@ -142,7 +144,10 @@ export default function Orders() {
                           </p>
                         </div>
                         <Badge className={statusColors[order.status as keyof typeof statusColors]}>
-                          <StatusIcon className="w-3 h-3 mr-1" />
+                          {(() => {
+                            const Icon = statusIcons[order.status as keyof typeof statusIcons] || Clock;
+                            return <Icon className="w-3 h-3 mr-1" />;
+                          })()}
                           {order.status}
                         </Badge>
                       </div>
@@ -205,7 +210,7 @@ export default function Orders() {
             </div>
           )}
 
-          {orders && orders.length === 0 && (
+          {!ordersLoading && ordersList.length === 0 && (
             <div className="text-center py-12">
               <div className="w-24 h-24 mx-auto bg-gray-100 rounded-full flex items-center justify-center mb-4">
                 <Clock className="w-12 h-12 text-gray-400" />
