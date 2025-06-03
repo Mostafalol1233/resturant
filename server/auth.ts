@@ -1,6 +1,7 @@
 import session from "express-session";
 import type { Express, RequestHandler, Request } from "express";
 import { storage } from "./storage";
+import MemoryStore from "memorystore";
 
 declare global {
   namespace Express {
@@ -13,14 +14,21 @@ declare global {
 export function setupAuth(app: Express) {
   app.set("trust proxy", 1);
   
+  const MemoryStoreSession = MemoryStore(session);
+  const isProduction = process.env.NODE_ENV === "production";
+  
   app.use(session({
-    secret: "restaurant-pos-secret-key",
+    secret: process.env.SESSION_SECRET || "restaurant-pos-secret-key",
     resave: false,
     saveUninitialized: false,
+    store: new MemoryStoreSession({
+      checkPeriod: 86400000, // prune expired entries every 24h
+    }),
     cookie: {
       httpOnly: true,
-      secure: false, // Set to true in production with HTTPS
+      secure: isProduction,
       maxAge: 24 * 60 * 60 * 1000, // 24 hours
+      sameSite: isProduction ? 'none' : 'lax',
     },
   }));
 
@@ -94,6 +102,27 @@ export function setupAuth(app: Express) {
     } catch (error) {
       console.error("Auto-login error:", error);
       res.status(500).json({ message: "Auto-login failed" });
+    }
+  });
+
+  // Get current user endpoint
+  app.get("/api/auth/user", async (req: any, res) => {
+    const session = req.session as any;
+    
+    if (!session || !session.userId || !session.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    try {
+      const user = await storage.getUser(session.userId);
+      if (!user || !user.isActive) {
+        return res.status(401).json({ message: "Unauthorized" });
+      }
+      
+      res.json(user);
+    } catch (error) {
+      console.error("Error fetching current user:", error);
+      res.status(401).json({ message: "Unauthorized" });
     }
   });
 }

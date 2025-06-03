@@ -139,7 +139,7 @@ export default function Landing() {
             Streamline your operations with our comprehensive POS system designed for restaurants and retail stores. 
             Manage orders, inventory, staff, and analytics all in one place.
           </p>
-          <Button onClick={handleLogin} size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
+          <Button onClick={handleAutoLogin} size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
             Get Started Today
           </Button>
         </div>
@@ -215,7 +215,7 @@ export default function Landing() {
           <p className="text-lg text-gray-600 mb-8 max-w-2xl mx-auto">
             Join thousands of restaurants and retail stores that trust our platform to manage their operations efficiently.
           </p>
-          <Button onClick={handleLogin} size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
+          <Button onClick={handleAutoLogin} size="lg" className="bg-blue-600 hover:bg-blue-700 text-lg px-8 py-3">
             Start Your Journey
           </Button>
         </div>
